@@ -1,0 +1,66 @@
+version: "3.9"
+
+# =============================================================================
+# AI Podcast Engine 2.0 — Docker Compose
+# Usage: docker-compose up
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Backend: FastAPI + AI Pipeline
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: podcast_engine_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist AI-generated data and the knowledge graph outside the container
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # Frontend: Next.js UI
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: podcast_engine_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Ollama: Local LLM (optional — comment out if using Claude API)
+  # Pull models with: docker-compose exec ollama ollama pull llama3
+  # ---------------------------------------------------------------------------
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: podcast_engine_ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   restart: unless-stopped
+
+volumes:
+  ollama_data:

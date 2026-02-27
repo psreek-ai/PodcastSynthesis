@@ -1,0 +1,58 @@
+name: Feature Request
+description: Suggest an idea or improvement for the Podcast Engine.
+labels: ["enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before submitting, check the [roadmap in CONTRIBUTING.md](../../blob/main/CONTRIBUTING.md#roadmap--open-issues)
+        to see if this is already planned.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case or pain point.
+      placeholder: "I always have to manually skip sponsor reads even after the LLM filters them..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How would you like this to work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Any other approaches you thought about?
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area does this affect?
+      multiple: true
+      options:
+        - Pipeline (ingestion/transcription/LLM)
+        - Knowledge Graph
+        - Audio/Media processing
+        - AI Co-Host
+        - Viral video export
+        - Frontend / UI
+        - API / Backend
+        - Docker / DevOps
+        - Documentation
+        - Other
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Would you like to implement this?
+      options:
+        - label: "Yes, I'd like to open a PR for this"
+        - label: "I can help test/review a PR"
