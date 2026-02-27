@@ -1,0 +1,80 @@
+name: Bug Report
+description: Something broke? Help us fix it.
+labels: ["bug", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in as much detail as you can.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: "When I submit a YouTube URL, the pipeline crashes with..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: "The audio should be downloaded and processed..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce this? Include the URL if it's a public one.
+      placeholder: |
+        1. Submit URL `https://...`
+        2. Check backend logs
+        3. See error: `...`
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste any error output from the backend terminal.
+      render: shell
+
+  - type: dropdown
+    id: llm_mode
+    attributes:
+      label: LLM Mode
+      options:
+        - Cloud (Claude via ANTHROPIC_API_KEY)
+        - Local (Ollama)
+        - Not applicable
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: How did you install?
+      options:
+        - Docker (docker-compose up)
+        - Manual (make install)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: python_version
+    attributes:
+      label: Python version
+      placeholder: "3.11.5"
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS 14.2 / Ubuntu 22.04 / Windows 11"
