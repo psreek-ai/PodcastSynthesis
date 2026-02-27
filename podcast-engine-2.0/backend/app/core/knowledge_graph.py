@@ -1,9 +1,10 @@
-import os
-import chromadb
-from chromadb.config import Settings
 import logging
+import os
+
+import chromadb
 
 logging.basicConfig(level=logging.INFO)
+
 
 class KnowledgeGraph:
     def __init__(self, db_dir="data/chroma_db", collection_name="user_knowledge"):
@@ -13,11 +14,11 @@ class KnowledgeGraph:
         os.makedirs(db_dir, exist_ok=True)
         # Using the persistent client to save graph locally
         self.client = chromadb.PersistentClient(path=db_dir)
-        
+
         # Create or load the collection
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
-            metadata={"hnsw:space": "cosine"} # Default similarity metric
+            metadata={"hnsw:space": "cosine"},  # Default similarity metric
         )
         logging.info(f"Initialized Knowledge Graph. DB Path: {db_dir}")
 
@@ -32,12 +33,10 @@ class KnowledgeGraph:
 
         # Generate unique IDs for each concept based on content hash or counter
         ids = [f"concept_{hash(c)}" for c in concepts]
-        
+
         # Add to ChromaDB. It automatically handles basic embedding if an embedding function isn't specfied.
         self.collection.add(
-            documents=concepts,
-            metadatas=metadata if metadata else [{} for _ in concepts],
-            ids=ids
+            documents=concepts, metadatas=metadata if metadata else [{} for _ in concepts], ids=ids
         )
         logging.info(f"Added {len(concepts)} concepts to the Knowledge Graph.")
 
@@ -49,22 +48,20 @@ class KnowledgeGraph:
         if self.collection.count() == 0:
             return False, []
 
-        results = self.collection.query(
-            query_texts=[chunk],
-            n_results=n_results
-        )
-        
+        results = self.collection.query(query_texts=[chunk], n_results=n_results)
+
         # ChromaDB returns distances. For cosine space, smaller roughly means more similar
         # Depending on the embedding model, we check distance
-        distances = results['distances'][0]
-        documents = results['documents'][0]
-        
+        distances = results["distances"][0]
+        documents = results["documents"][0]
+
         # Check if the closest match is below the distance threshold (meaning highly similar)
         # threshold needs tuning based on embedding model defaults
         if distances and min(distances) < threshold:
             logging.info(f"Concept likely known. Closest distance: {min(distances)}")
             return True, documents
         return False, []
+
 
 if __name__ == "__main__":
     kg = KnowledgeGraph()

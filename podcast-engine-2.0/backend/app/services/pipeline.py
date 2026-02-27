@@ -7,18 +7,19 @@ Takes a URL through the full ingestion flow:
 """
 
 import asyncio
-import logging
-import uuid
-import os
 import json
+import logging
+import os
+import uuid
+
+from app.ai.llm_router import PodcastCuratorLLM
+from app.core.knowledge_graph import KnowledgeGraph
+from app.db.database import add_feed_item
+from app.synthesis.advanced_media import advanced_stitch_with_crossfade
+from app.synthesis.cohost import AICoHost
 
 from .download import download_audio
 from .transcribe import transcribe_audio
-from app.ai.llm_router import PodcastCuratorLLM
-from app.synthesis.cohost import AICoHost
-from app.synthesis.advanced_media import advanced_stitch_with_crossfade
-from app.core.knowledge_graph import KnowledgeGraph
-from app.db.database import add_feed_item
 
 logger = logging.getLogger(__name__)
 
@@ -109,9 +110,7 @@ async def process_podcast_task(url: str) -> bool:
         logger.info(f"[Task {task_id}] Step 5/7 - Generating AI Co-Host intro...")
         cohost = AICoHost(use_elevenlabs=bool(os.getenv("ELEVENLABS_API_KEY")))
         first_reasoning = novel_segments[0].get("reasoning", "a key insight")
-        intro_text = (
-            f"Here's something worth your attention. {first_reasoning} Let's get into it."
-        )
+        intro_text = f"Here's something worth your attention. {first_reasoning} Let's get into it."
         tts_audio = await asyncio.to_thread(cohost.generate_transition, intro_text)
 
         # Step 6: Stitch Audio
@@ -145,9 +144,7 @@ async def process_podcast_task(url: str) -> bool:
         )
 
         # Update Knowledge Graph with newly learned concepts
-        new_concepts = [
-            seg.get("reasoning", "") for seg in novel_segments if seg.get("reasoning")
-        ]
+        new_concepts = [seg.get("reasoning", "") for seg in novel_segments if seg.get("reasoning")]
         if new_concepts:
             kg.add_concepts(
                 new_concepts,
@@ -166,9 +163,22 @@ async def process_podcast_task(url: str) -> bool:
 def _extract_tags(segments: list) -> list:
     """Derive simple topic tags from LLM-selected segment reasoning text."""
     common_topics = {
-        "ai", "llm", "machine learning", "neuroscience", "productivity",
-        "startup", "investing", "health", "longevity", "focus", "habits",
-        "crypto", "physics", "philosophy", "psychology", "leadership",
+        "ai",
+        "llm",
+        "machine learning",
+        "neuroscience",
+        "productivity",
+        "startup",
+        "investing",
+        "health",
+        "longevity",
+        "focus",
+        "habits",
+        "crypto",
+        "physics",
+        "philosophy",
+        "psychology",
+        "leadership",
     }
     found = set()
     for seg in segments:

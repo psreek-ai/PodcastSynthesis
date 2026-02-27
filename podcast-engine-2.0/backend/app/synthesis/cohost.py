@@ -1,9 +1,11 @@
-import os
-import requests
-import uuid
 import logging
+import os
+import uuid
+
+import requests
 
 logging.basicConfig(level=logging.INFO)
+
 
 class AICoHost:
     def __init__(self, use_elevenlabs=True):
@@ -15,7 +17,7 @@ class AICoHost:
         self.use_elevenlabs = use_elevenlabs
         self.api_key = os.getenv("ELEVENLABS_API_KEY")
         # Default clear narrator voice ID
-        self.voice_id = "TNQX694VP61R6o4D2n38" 
+        self.voice_id = "TNQX694VP61R6o4D2n38"
 
     def generate_transition(self, context_text, output_dir="data/tts"):
         """
@@ -32,40 +34,38 @@ class AICoHost:
             return None
 
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{self.voice_id}"
-        
+
         headers = {
             "Accept": "audio/mpeg",
             "Content-Type": "application/json",
-            "xi-api-key": self.api_key
+            "xi-api-key": self.api_key,
         }
 
         data = {
             "text": context_text,
             "model_id": "eleven_monolingual_v1",
-            "voice_settings": {
-                "stability": 0.5,
-                "similarity_boost": 0.5
-            }
+            "voice_settings": {"stability": 0.5, "similarity_boost": 0.5},
         }
 
         try:
-            logging.info(f"Generating AI Co-Host transition audio...")
+            logging.info("Generating AI Co-Host transition audio...")
             response = requests.post(url, json=data, headers=headers)
-            
+
             if response.status_code == 200:
-                with open(filepath, 'wb') as f:
+                with open(filepath, "wb") as f:
                     for chunk in response.iter_content(chunk_size=1024):
                         if chunk:
                             f.write(chunk)
                 logging.info(f"Co-Host audio saved to {filepath}")
                 return filepath
             else:
-                 logging.error(f"TTS Failed: {response.text}")
-                 return None
-                 
+                logging.error(f"TTS Failed: {response.text}")
+                return None
+
         except Exception as e:
             logging.error(f"Error during TTS generation: {e}")
             return None
+
 
 if __name__ == "__main__":
     print("AI Co-Host TTS module loaded.")

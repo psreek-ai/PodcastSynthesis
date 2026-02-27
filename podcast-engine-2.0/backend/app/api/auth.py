@@ -1,12 +1,13 @@
-import os
 import json
-import secrets
-import webbrowser
 import logging
+import os
+import secrets
 import urllib.parse
+import webbrowser
+
+import httpx
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
-import httpx
 
 logging.basicConfig(level=logging.INFO)
 
@@ -25,6 +26,7 @@ CONFIG_FILE = "data/config.json"
 
 # Temporary store for the state nonce during OAuth
 _oauth_state = {}
+
 
 @auth_router.get("/auth/anthropic/start")
 def start_anthropic_auth():
@@ -48,11 +50,14 @@ def start_anthropic_auth():
 
     auth_url = f"{ANTHROPIC_AUTHORIZE_URL}?{urllib.parse.urlencode(params)}"
     logging.info(f"Opening Anthropic auth URL: {auth_url}")
-    
+
     # Open browser on the SERVER side (the machine running the backend)
     webbrowser.open(auth_url)
 
-    return {"status": "browser_opened", "message": "Opened Anthropic login in your browser. Authorize to complete setup."}
+    return {
+        "status": "browser_opened",
+        "message": "Opened Anthropic login in your browser. Authorize to complete setup.",
+    }
 
 
 @auth_router.get("/auth/anthropic/callback", response_class=HTMLResponse)
@@ -63,17 +68,23 @@ async def anthropic_callback(code: str, state: str):
     """
 
     if state != _oauth_state.get("state"):
-        return HTMLResponse("<h1 style='font-family:sans-serif; color:red'>Security Error: State mismatch. Please try again.</h1>", status_code=400)
+        return HTMLResponse(
+            "<h1 style='font-family:sans-serif; color:red'>Security Error: State mismatch. Please try again.</h1>",
+            status_code=400,
+        )
 
     # Exchange code for token
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(ANTHROPIC_TOKEN_URL, data={
-                "grant_type": "authorization_code",
-                "code": code,
-                "redirect_uri": REDIRECT_URI,
-                "client_id": ANTHROPIC_CLIENT_ID,
-            })
+            response = await client.post(
+                ANTHROPIC_TOKEN_URL,
+                data={
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "redirect_uri": REDIRECT_URI,
+                    "client_id": ANTHROPIC_CLIENT_ID,
+                },
+            )
 
         token_data = response.json()
         access_token = token_data.get("access_token")
@@ -82,27 +93,27 @@ async def anthropic_callback(code: str, state: str):
             logging.error(f"Token exchange failed: {token_data}")
             return HTMLResponse(
                 f"<h1 style='font-family:sans-serif;color:red'>Auth failed. Check backend logs.</h1><pre>{json.dumps(token_data, indent=2)}</pre>",
-                status_code=400
+                status_code=400,
             )
 
         # Persist the token to environment and config file
         os.environ["ANTHROPIC_API_KEY"] = access_token
         os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
-        
+
         current_config = {}
         if os.path.exists(CONFIG_FILE):
             try:
-                with open(CONFIG_FILE, "r") as f:
+                with open(CONFIG_FILE) as f:
                     current_config = json.load(f)
             except Exception:
                 pass
-                
+
         current_config["claude_token"] = access_token
         with open(CONFIG_FILE, "w") as f:
             json.dump(current_config, f)
 
         logging.info("Anthropic OAuth token obtained and saved successfully.")
-        
+
         # Show a beautiful success page that auto-closes
         return HTMLResponse("""
 <!DOCTYPE html>
