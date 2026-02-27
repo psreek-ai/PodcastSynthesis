@@ -15,6 +15,7 @@ class ConfigUpdate(BaseModel):
     spotify_client_id: str | None = None
     spotify_client_secret: str | None = None
     elevenlabs_api_key: str | None = None
+    gemini_api_key: str | None = None
 
 
 CONFIG_FILE = "data/config.json"
@@ -53,6 +54,10 @@ def update_config(config: ConfigUpdate):
         os.environ["ELEVENLABS_API_KEY"] = config.elevenlabs_api_key
         current_config["elevenlabs_api_key"] = config.elevenlabs_api_key
 
+    if config.gemini_api_key:
+        os.environ["GEMINI_API_KEY"] = config.gemini_api_key
+        current_config["gemini_api_key"] = config.gemini_api_key
+
     with open(CONFIG_FILE, "w") as f:
         json.dump(current_config, f)
 
@@ -64,8 +69,14 @@ def update_config(config: ConfigUpdate):
 def get_config():
     """Returns whether keys are set (without returning the actual secret keys)."""
     return {
-        "has_claude": "ANTHROPIC_API_KEY" in os.environ or os.environ.get("ANTHROPIC_API_KEY"),
-        "has_spotify": "SPOTIPY_CLIENT_ID" in os.environ or os.environ.get("SPOTIPY_CLIENT_ID"),
-        "has_elevenlabs": "ELEVENLABS_API_KEY" in os.environ
-        or os.environ.get("ELEVENLABS_API_KEY"),
+        "has_claude": bool(os.environ.get("ANTHROPIC_API_KEY")),
+        "has_spotify": bool(os.environ.get("SPOTIPY_CLIENT_ID")),
+        "has_elevenlabs": bool(os.environ.get("ELEVENLABS_API_KEY")),
+        "has_gemini": bool(os.environ.get("GEMINI_API_KEY")),
+        "has_spotify_token": bool(os.environ.get("SPOTIFY_ACCESS_TOKEN")),
+        "tts_provider": (
+            "elevenlabs" if os.environ.get("ELEVENLABS_API_KEY")
+            else "gemini" if os.environ.get("GEMINI_API_KEY")
+            else "none"
+        ),
     }

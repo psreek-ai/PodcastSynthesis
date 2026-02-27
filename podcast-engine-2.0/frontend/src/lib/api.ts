@@ -25,6 +25,30 @@ export interface ConfigStatus {
   has_claude: boolean;
   has_spotify: boolean;
   has_elevenlabs: boolean;
+  has_gemini: boolean;
+  has_spotify_token: boolean;
+  tts_provider: "elevenlabs" | "gemini" | "none";
+}
+
+export interface KnowledgeConcept {
+  id: string;
+  text: string;
+  source: string;
+  task_id: string;
+}
+
+export interface KnowledgeHistoryResponse {
+  concepts: KnowledgeConcept[];
+  total: number;
+}
+
+export interface SpotifyShow {
+  id: string;
+  name: string;
+  publisher: string;
+  description: string;
+  image: string | null;
+  episodes_total: number;
 }
 
 /** Fetch the curated knowledge feed. */
@@ -67,5 +91,27 @@ export async function askCoHost(
     }),
   });
   if (!res.ok) throw new Error(`Chat request failed: ${res.statusText}`);
+  return res.json();
+}
+
+/** Fetch concepts stored in the user's Knowledge Graph. */
+export async function getKnowledgeHistory(): Promise<KnowledgeHistoryResponse> {
+  const res = await fetch(`${API_BASE}/api/knowledge/history`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch knowledge history: ${res.statusText}`);
+  return res.json();
+}
+
+/** Delete a concept from the Knowledge Graph by ID. */
+export async function deleteKnowledgeConcept(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/knowledge/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`Failed to delete concept: ${res.statusText}`);
+}
+
+/** Fetch the user's saved Spotify shows (requires Spotify OAuth). */
+export async function getSpotifyShows(): Promise<{ shows: SpotifyShow[]; total: number }> {
+  const res = await fetch(`${API_BASE}/api/spotify/shows`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch Spotify shows: ${res.statusText}`);
   return res.json();
 }

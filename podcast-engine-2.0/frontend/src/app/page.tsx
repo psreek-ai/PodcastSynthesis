@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FeedPlayer } from "@/components/FeedPlayer";
+import { KnowledgeHistory } from "@/components/KnowledgeHistory";
 import { SubmitPodcast } from "@/components/SubmitPodcast";
 import { StatusBar } from "@/components/StatusBar";
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<"feed" | "submit">("feed");
+  const [activeTab, setActiveTab] = useState<"feed" | "submit" | "knowledge">("feed");
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -24,7 +25,7 @@ export default function HomePage() {
         </div>
 
         <nav className="flex gap-1 p-1 rounded-lg glass">
-          {(["feed", "submit"] as const).map((tab) => (
+          {(["feed", "submit", "knowledge"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -34,7 +35,7 @@ export default function HomePage() {
                   : "text-white/40 hover:text-white/70"
               }`}
             >
-              {tab === "feed" ? "Feed" : "Add Source"}
+              {tab === "feed" ? "Feed" : tab === "submit" ? "Add Source" : "Knowledge"}
             </button>
           ))}
         </nav>
@@ -53,7 +54,7 @@ export default function HomePage() {
             >
               <FeedPlayer />
             </motion.div>
-          ) : (
+          ) : activeTab === "submit" ? (
             <motion.div
               key="submit"
               initial={{ opacity: 0, y: 8 }}
@@ -62,6 +63,16 @@ export default function HomePage() {
               transition={{ duration: 0.2 }}
             >
               <SubmitPodcast />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="knowledge"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <KnowledgeHistory />
             </motion.div>
           )}
         </AnimatePresence>

@@ -11,3 +11,6 @@ liteLLM>=1.10.0
 celery>=5.3.6
 redis>=5.0.1
 moviepy>=1.0.3
+google-genai>=1.0.0
+httpx>=0.25.0
+requests>=2.31.0

@@ -67,13 +67,20 @@ async def process_podcast_task(url: str) -> bool:
         use_local = os.getenv("USE_LOCAL_LLM", "false").lower() == "true"
         llm = PodcastCuratorLLM(use_local=use_local)
 
+        # Build a known-concepts summary to guide the LLM away from familiar territory.
+        # This mirrors the context-aware synthesis approach from PodcastKnowledgeDistiller.
+        kg_for_context = KnowledgeGraph()
+        known_concepts_summary = _build_known_concepts_summary(kg_for_context)
+        if known_concepts_summary:
+            logger.info(f"[Task {task_id}] Passing {len(known_concepts_summary.splitlines())} known concepts as context to LLM.")
+
         all_segments = transcript["segments"]
         chunk_size = 30
         keep_segments = []
 
         for chunk_start in range(0, min(len(all_segments), 90), chunk_size):
             chunk = all_segments[chunk_start : chunk_start + chunk_size]
-            result = await asyncio.to_thread(llm.analyze_chunk, json.dumps(chunk), "")
+            result = await asyncio.to_thread(llm.analyze_chunk, json.dumps(chunk), known_concepts_summary)
             if result:
                 keep_segments.extend(result)
 
@@ -187,6 +194,30 @@ def _extract_tags(segments: list) -> list:
             if topic in text:
                 found.add(topic.title())
     return list(found)[:5] if found else ["Insight"]
+
+
+def _build_known_concepts_summary(kg: KnowledgeGraph, max_concepts: int = 20) -> str:
+    """
+    Queries the KnowledgeGraph for recently stored concepts and formats them
+    as a brief summary string to pass to the LLM as context.
+
+    This enables context-aware curation — the LLM skips content the user
+    already knows, surfacing only genuinely novel insights (inspired by the
+    context-building pattern in PodcastKnowledgeDistiller).
+    """
+    try:
+        count = kg.collection.count()
+        if count == 0:
+            return ""
+        # Peek at up to max_concepts stored documents
+        peek = kg.collection.peek(limit=max_concepts)
+        docs = peek.get("documents", [])
+        if not docs:
+            return ""
+        lines = [f"- {doc[:120]}" for doc in docs if doc]
+        return "Known concepts (skip or build on these):\n" + "\n".join(lines)
+    except Exception:
+        return ""
 
 
 def _estimate_duration(segments: list) -> float:
