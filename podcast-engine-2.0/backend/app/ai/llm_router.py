@@ -1,9 +1,10 @@
-import os
 import json
 import logging
+
 from litellm import completion
 
 logging.basicConfig(level=logging.INFO)
+
 
 class PodcastCuratorLLM:
     def __init__(self, use_local=False, model_name=None):
@@ -12,7 +13,7 @@ class PodcastCuratorLLM:
         Supports seamless switching between Claude/OpenAI and Local Ollama models.
         """
         self.use_local = use_local
-        
+
         # Determine the model routing
         if self.use_local:
             # Assumes Ollama is running locally on default port
@@ -28,7 +29,7 @@ class PodcastCuratorLLM:
         Sends a chunk of a podcast transcript to the LLM to extract dense knowledge.
         """
         prompt = f"""You are an elite podcast editor and curator.
-Your task is to analyze the following podcast transcript chunk and decide which timestamps contain highly dense, valuable knowledge. 
+Your task is to analyze the following podcast transcript chunk and decide which timestamps contain highly dense, valuable knowledge.
 You must filter out:
 1. Ads and sponsor reads.
 2. Filler conversation, small talk, and generic banter.
@@ -49,31 +50,29 @@ Output a clean JSON list of segment objects to KEEP. Each object must have:
 Do NOT output anything other than valid JSON. If the entire chunk is useless, output an empty list `[]`.
 """
         messages = [{"role": "user", "content": prompt}]
-        
+
         try:
             logging.info(f"Sending chunk to {self.model} for analysis...")
-            
+
             # LiteLLM abstracts the API differences
             response = completion(
-                model=self.model,
-                messages=messages,
-                temperature=0.1,
-                max_tokens=2048
+                model=self.model, messages=messages, temperature=0.1, max_tokens=2048
             )
-            
+
             content = response.choices[0].message.content
-            
+
             # Basic cleanup for markdown code blocks
             if content.startswith("```json"):
                 content = content[7:-3].strip()
             elif content.startswith("```"):
                 content = content[3:-3].strip()
-                
+
             return json.loads(content)
-            
+
         except Exception as e:
             logging.error(f"Error during LLM analysis: {e}")
             return []
+
 
 if __name__ == "__main__":
     # Test stub

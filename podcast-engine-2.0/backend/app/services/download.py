@@ -4,9 +4,9 @@ Audio download service using yt-dlp.
 Supports YouTube, RSS feeds, direct podcast MP3 URLs, and anything yt-dlp handles.
 """
 
+import logging
 import os
 import subprocess
-import logging
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -32,18 +32,21 @@ def download_audio(url: str, output_path: str) -> bool:
     # Using "-o output_path" directly with "-x --audio-format mp3" achieves this.
     command = [
         "yt-dlp",
-        "--no-playlist",        # Don't download entire playlists
-        "-x",                   # Extract audio only
-        "--audio-format", "mp3",
-        "--audio-quality", "0", # Best quality
-        "--no-progress",        # Cleaner logs in server context
-        "-o", output_path,
+        "--no-playlist",  # Don't download entire playlists
+        "-x",  # Extract audio only
+        "--audio-format",
+        "mp3",
+        "--audio-quality",
+        "0",  # Best quality
+        "--no-progress",  # Cleaner logs in server context
+        "-o",
+        output_path,
         url,
     ]
 
     logger.info(f"Downloading audio from: {url}")
     try:
-        result = subprocess.run(
+        subprocess.run(
             command,
             check=True,
             capture_output=True,
